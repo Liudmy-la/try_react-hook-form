@@ -13,13 +13,34 @@ interface FormType {
 	[FIELD_KEY.NAME]: string;
 }
 
+// interface ContainerProps {
+// 	name: string;
+// }
+
 const validateRequired = (value: string) => value.length !== 0 || `Don't remain the field blank.`;
 const validateIsNumber = (value: string) => isNaN(Number(value)) || "Don't use numbers as a value";
 
 export default function Container () {
-	const {register, formState, handleSubmit, reset} = useForm<FormType>({
-		mode: "onChange",
-	});
+	const {
+			register, formState, handleSubmit, 
+			reset, resetField, 
+			setValue, 
+			setFocus, 
+			setError, clearErrors,
+			getFieldState
+		} = useForm<FormType>({
+			mode: "onTouched",
+
+			defaultValues: async () => {
+				return new Promise((resolve, reject) => {
+					setTimeout(() => resolve({
+							[FIELD_KEY.MESSAGE]: 'Message',
+							[FIELD_KEY.NAME]: 'Name'
+						})
+					, 3000)
+				})
+			}
+		});
 
 	const onSubmit: SubmitHandler<FormType> = (data) => {
 		//test the behaviour of async functions - like "fetch"
@@ -28,7 +49,11 @@ export default function Container () {
 		})
 	};
 
-	const onError: SubmitErrorHandler<FormType> = (errors) => console.log("errors", errors)
+	const onError: SubmitErrorHandler<FormType> = (errors) => console.log("errors", errors);
+
+	const isFormDisabled = formState.isValid !== true || formState.isSubmitting === true;
+
+	console.log(getFieldState(FIELD_KEY.MESSAGE, formState))
 
 	return (
 		<div className="contact">
@@ -68,7 +93,7 @@ export default function Container () {
 				)}
 
 				<button 
-					disabled={!formState.isValid || formState.isSubmitting} 
+					disabled={isFormDisabled} 
 					className="contact__button" 
 					type="submit"
 				>
@@ -77,6 +102,18 @@ export default function Container () {
 
 				{formState.isSubmitting && <span style={{color: "blue"}}>Loading..</span>}
 				<span style={{color: "blue"}}>Submit count: {formState.submitCount}</span>
+				{formState.isLoading && <span style={{color: "purple"}}>Loading default values..</span>}
+
+				<button
+					type="button"
+					className="contact__button" 
+					onClick={() => setError(
+						FIELD_KEY.MESSAGE, 
+						{type: 'Custom ERR', message: 'Error text'},
+						{shouldFocus: true})}
+				>
+					Reset
+				</button>
 			</form>
 		</div>
 	);
